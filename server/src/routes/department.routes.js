@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const Subject = require('../models/subject.model');
+const Department = require('../models/department.model');
 const authenticate = require('../middlewares/auth.middleware');
 const authorize = require('../middlewares/role.middleware');
 const { success, error } = require('../utils/apiResponse');
@@ -10,10 +10,10 @@ router.use(authenticate);
 
 router.post('/', authorize(ROLES.FACULTY), async (req, res) => {
   try {
-    const { name, subjectCode, departmentId } = req.body;
-    const subject = new Subject({ name, subjectCode, departmentId });
-    await subject.save();
-    return success(res, subject, 'Subject created successfully', 201);
+    const { name } = req.body;
+    const department = new Department({ name });
+    await department.save();
+    return success(res, department, 'Department created successfully', 201);
   } catch (err) {
     return error(res, err.message, err.status || 500);
   }
@@ -21,10 +21,8 @@ router.post('/', authorize(ROLES.FACULTY), async (req, res) => {
 
 router.get('/', async (req, res) => {
   try {
-    const subjects = await Subject.find()
-      .populate('departmentId', 'name')
-      .sort({ name: 1 });
-    return success(res, subjects, 'Subjects retrieved successfully');
+    const departments = await Department.find().sort({ name: 1 });
+    return success(res, departments, 'Departments retrieved successfully');
   } catch (err) {
     return error(res, err.message, err.status || 500);
   }

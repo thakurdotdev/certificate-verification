@@ -7,13 +7,22 @@ const generateToken = (userId) => {
   return jwt.sign({ userId }, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN });
 };
 
+const formatUser = (user) => ({
+  id: user._id,
+  name: user.name,
+  email: user.email,
+  role: user.role,
+  rollNo: user.rollNo,
+  departmentId: user.departmentId,
+});
+
 const register = async (data) => {
   const { email, password } = data;
 
   const user = await User.findOne({ email });
-  
+
   if (!user) {
-    const err = new Error('Student not added by admin');
+    const err = new Error('Student not added by faculty');
     err.status = 404;
     throw err;
   }
@@ -34,17 +43,7 @@ const register = async (data) => {
   await user.save();
 
   const token = generateToken(user._id);
-  return {
-    user: {
-      id: user._id,
-      name: user.name,
-      email: user.email,
-      role: user.role,
-      studentId: user.studentId,
-      department: user.department,
-    },
-    token,
-  };
+  return { user: formatUser(user), token };
 };
 
 const login = async (email, password) => {
@@ -75,17 +74,7 @@ const login = async (email, password) => {
   }
 
   const token = generateToken(user._id);
-  return {
-    user: {
-      id: user._id,
-      name: user.name,
-      email: user.email,
-      role: user.role,
-      studentId: user.studentId,
-      department: user.department,
-    },
-    token,
-  };
+  return { user: formatUser(user), token };
 };
 
 module.exports = { register, login };

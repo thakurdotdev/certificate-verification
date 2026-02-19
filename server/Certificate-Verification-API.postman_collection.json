@@ -2,7 +2,7 @@
   "info": {
     "name": "Certificate Verification API",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-    "description": "Student Certificate Submission & Verification System API\n\n📌 Key Flow: Admin adds student → Student activates account → Student uploads certificates → Faculty/Admin verifies"
+    "description": "Student Certificate Submission & Verification System API\n\n📌 Key Flow: Faculty creates department → Faculty adds student → Student activates account → Student uploads certificates → Faculty verifies\n\n🔐 Roles: FACULTY, STUDENT (no Admin role)\n\n🏷️ Faculty sees only certificates from students in their department"
   },
   "variable": [
     {
@@ -14,7 +14,23 @@
       "value": ""
     },
     {
-      "key": "adminToken",
+      "key": "facultyToken",
+      "value": ""
+    },
+    {
+      "key": "studentToken",
+      "value": ""
+    },
+    {
+      "key": "departmentId",
+      "value": ""
+    },
+    {
+      "key": "certificateId",
+      "value": ""
+    },
+    {
+      "key": "studentId",
       "value": ""
     }
   ],
@@ -30,10 +46,10 @@
   },
   "item": [
     {
-      "name": "Demo Flow (Follow This Order)",
+      "name": "✅ Demo Flow (Follow This Order)",
       "item": [
         {
-          "name": "Step 1: Admin Login",
+          "name": "Step 1: Faculty Login",
           "event": [
             {
               "listen": "test",
@@ -41,7 +57,7 @@
                 "exec": [
                   "var jsonData = pm.response.json();",
                   "if (jsonData.success && jsonData.data.token) {",
-                  "    pm.collectionVariables.set('adminToken', jsonData.data.token);",
+                  "    pm.collectionVariables.set('facultyToken', jsonData.data.token);",
                   "    pm.collectionVariables.set('token', jsonData.data.token);",
                   "}"
                 ],
@@ -50,6 +66,9 @@
             }
           ],
           "request": {
+            "auth": {
+              "type": "noauth"
+            },
             "method": "POST",
             "header": [
               {
@@ -59,25 +78,39 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"email\": \"admin@marwadi.edu.in\",\n  \"password\": \"admin123\"\n}"
+              "raw": "{\n  \"email\": \"faculty@marwadi.edu.in\",\n  \"password\": \"faculty123\"\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/api/auth/login",
               "host": ["{{baseUrl}}"],
               "path": ["api", "auth", "login"]
             },
-            "description": "Login as Admin (create admin in DB first via MongoDB shell)"
+            "description": "Login as the seeded Faculty user. Auto-saves token to facultyToken and token variables."
           }
         },
         {
-          "name": "Step 2: Admin Creates Student",
+          "name": "Step 2: Faculty Creates Department",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var jsonData = pm.response.json();",
+                  "if (jsonData.success && jsonData.data._id) {",
+                  "    pm.collectionVariables.set('departmentId', jsonData.data._id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
           "request": {
             "auth": {
               "type": "bearer",
               "bearer": [
                 {
                   "key": "token",
-                  "value": "{{adminToken}}",
+                  "value": "{{facultyToken}}",
                   "type": "string"
                 }
               ]
@@ -91,18 +124,64 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"name\": \"John Doe\",\n  \"email\": \"john@student.edu\",\n  \"studentId\": \"STU001\",\n  \"department\": \"Computer Science\",\n  \"role\": \"STUDENT\"\n}"
+              "raw": "{\n  \"name\": \"Information Technology\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/departments",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "departments"]
+            },
+            "description": "Faculty creates a department. Auto-saves departmentId. (FACULTY only)"
+          }
+        },
+        {
+          "name": "Step 3: Faculty Creates Student",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var jsonData = pm.response.json();",
+                  "if (jsonData.success && jsonData.data.id) {",
+                  "    pm.collectionVariables.set('studentId', jsonData.data.id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{facultyToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"John Doe\",\n  \"email\": \"john@student.edu\",\n  \"rollNo\": \"21IT001\",\n  \"departmentId\": \"{{departmentId}}\",\n  \"role\": \"STUDENT\"\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/api/users",
               "host": ["{{baseUrl}}"],
               "path": ["api", "users"]
             },
-            "description": "Admin adds student to the system (no password). Student will set password during activation."
+            "description": "Faculty adds a student (no password). Student must activate later. Auto-saves studentId. (FACULTY only)"
           }
         },
         {
-          "name": "Step 3: Student Activates Account",
+          "name": "Step 4: Student Activates Account",
           "event": [
             {
               "listen": "test",
@@ -110,6 +189,7 @@
                 "exec": [
                   "var jsonData = pm.response.json();",
                   "if (jsonData.success && jsonData.data.token) {",
+                  "    pm.collectionVariables.set('studentToken', jsonData.data.token);",
                   "    pm.collectionVariables.set('token', jsonData.data.token);",
                   "}"
                 ],
@@ -137,11 +217,11 @@
               "host": ["{{baseUrl}}"],
               "path": ["api", "auth", "register"]
             },
-            "description": "Student account activation (admin-added only).\n\n❗ This will FAIL if the student was not added by Admin first.\n\nThis is NOT public signup - only students pre-added by admin can activate their accounts."
+            "description": "Student sets password to activate account. Auto-saves studentToken.\n\n❗ Fails if student was not added by Faculty first."
           }
         },
         {
-          "name": "Step 4: Student Logs In",
+          "name": "Step 5: Student Logs In",
           "event": [
             {
               "listen": "test",
@@ -149,6 +229,7 @@
                 "exec": [
                   "var jsonData = pm.response.json();",
                   "if (jsonData.success && jsonData.data.token) {",
+                  "    pm.collectionVariables.set('studentToken', jsonData.data.token);",
                   "    pm.collectionVariables.set('token', jsonData.data.token);",
                   "}"
                 ],
@@ -157,6 +238,9 @@
             }
           ],
           "request": {
+            "auth": {
+              "type": "noauth"
+            },
             "method": "POST",
             "header": [
               {
@@ -173,17 +257,46 @@
               "host": ["{{baseUrl}}"],
               "path": ["api", "auth", "login"]
             },
-            "description": "Student login after activation"
+            "description": "Student login after activation. Auto-saves studentToken."
           }
         },
         {
-          "name": "Step 5: Student Uploads Certificate",
+          "name": "Step 6: Student Uploads Certificate",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var jsonData = pm.response.json();",
+                  "if (jsonData.success && jsonData.data._id) {",
+                  "    pm.collectionVariables.set('certificateId', jsonData.data._id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
           "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{studentToken}}",
+                  "type": "string"
+                }
+              ]
+            },
             "method": "POST",
             "header": [],
             "body": {
               "mode": "formdata",
               "formdata": [
+                {
+                  "key": "name",
+                  "value": "John Doe",
+                  "type": "text"
+                },
                 {
                   "key": "title",
                   "value": "AWS Solutions Architect",
@@ -191,17 +304,12 @@
                 },
                 {
                   "key": "description",
-                  "value": "Professional certification",
+                  "value": "Professional certification for AWS cloud architecture",
                   "type": "text"
                 },
                 {
-                  "key": "fromDate",
+                  "key": "subjectDate",
                   "value": "2024-01-15",
-                  "type": "text"
-                },
-                {
-                  "key": "toDate",
-                  "value": "2027-01-15",
                   "type": "text"
                 },
                 {
@@ -216,7 +324,62 @@
               "host": ["{{baseUrl}}"],
               "path": ["api", "certificates"]
             },
-            "description": "Student uploads certificate for verification"
+            "description": "Student uploads certificate with file. Auto-saves certificateId. (STUDENT only)\n\n📎 Select a PDF/JPG/PNG file in the 'file' field."
+          }
+        },
+        {
+          "name": "Step 7: Faculty Views Pending Certificates",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{facultyToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/certificates/pending",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "certificates", "pending"]
+            },
+            "description": "Faculty sees pending certificates from students in their department. (FACULTY only)"
+          }
+        },
+        {
+          "name": "Step 8: Faculty Approves Certificate",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{facultyToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"APPROVED\",\n  \"remarks\": \"Certificate verified and approved\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/certificates/{{certificateId}}/verify",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "certificates", "{{certificateId}}", "verify"]
+            },
+            "description": "Faculty approves the uploaded certificate. Uses saved certificateId. (FACULTY only)"
           }
         }
       ]
@@ -260,7 +423,7 @@
               "host": ["{{baseUrl}}"],
               "path": ["api", "auth", "register"]
             },
-            "description": "Student account activation (admin-added only).\n\n❗ This will FAIL if student was not added by Admin first.\n\nThis is NOT public signup."
+            "description": "Student account activation. Student must be added by Faculty first.\n\n❗ Fails if email not found or already registered."
           }
         },
         {
@@ -280,6 +443,9 @@
             }
           ],
           "request": {
+            "auth": {
+              "type": "noauth"
+            },
             "method": "POST",
             "header": [
               {
@@ -289,14 +455,223 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"email\": \"john@student.edu\",\n  \"password\": \"password123\"\n}"
+              "raw": "{\n  \"email\": \"faculty@marwadi.edu.in\",\n  \"password\": \"faculty123\"\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/api/auth/login",
               "host": ["{{baseUrl}}"],
               "path": ["api", "auth", "login"]
             },
-            "description": "Login for all users (Student, Faculty, Admin)"
+            "description": "Login for all users (Student, Faculty). Returns JWT token."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Departments",
+      "item": [
+        {
+          "name": "Create Department",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var jsonData = pm.response.json();",
+                  "if (jsonData.success && jsonData.data._id) {",
+                  "    pm.collectionVariables.set('departmentId', jsonData.data._id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Information Technology\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/departments",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "departments"]
+            },
+            "description": "Create a new department. (FACULTY only)"
+          }
+        },
+        {
+          "name": "Get All Departments",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/departments",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "departments"]
+            },
+            "description": "Get all departments. Used for dropdowns. (Any authenticated user)"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Users (Faculty Only)",
+      "item": [
+        {
+          "name": "Create Student",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var jsonData = pm.response.json();",
+                  "if (jsonData.success && jsonData.data.id) {",
+                  "    pm.collectionVariables.set('studentId', jsonData.data.id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Jane Student\",\n  \"email\": \"jane@student.edu\",\n  \"rollNo\": \"21IT002\",\n  \"departmentId\": \"{{departmentId}}\",\n  \"role\": \"STUDENT\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/users",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "users"]
+            },
+            "description": "Faculty adds student with rollNo and departmentId (no password). Student activates via /register. (FACULTY only)"
+          }
+        },
+        {
+          "name": "Create Faculty",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Dr. Smith\",\n  \"email\": \"smith@marwadi.edu.in\",\n  \"password\": \"faculty123\",\n  \"departmentId\": \"{{departmentId}}\",\n  \"role\": \"FACULTY\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/users",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "users"]
+            },
+            "description": "Faculty creates another faculty member with password and department. (FACULTY only)"
+          }
+        },
+        {
+          "name": "Get All Students",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/users",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "users"]
+            },
+            "description": "Get all students. Supports optional ?departmentId= filter. (FACULTY only)"
+          }
+        },
+        {
+          "name": "Get All Students (by Department)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/users?departmentId={{departmentId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "users"],
+              "query": [
+                {
+                  "key": "departmentId",
+                  "value": "{{departmentId}}"
+                }
+              ]
+            },
+            "description": "Get students filtered by department. (FACULTY only)"
+          }
+        },
+        {
+          "name": "Get All Faculty",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/users/faculty",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "users", "faculty"]
+            },
+            "description": "Get all faculty members with department info. (FACULTY only)"
+          }
+        },
+        {
+          "name": "Get User by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/users/:id",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "users", ":id"],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "{{studentId}}"
+                }
+              ]
+            },
+            "description": "Get a specific user by ID. (FACULTY only)"
+          }
+        },
+        {
+          "name": "Update User",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Updated Name\",\n  \"isActive\": true\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/users/:id",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "users", ":id"],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "{{studentId}}"
+                }
+              ]
+            },
+            "description": "Update user details (name, departmentId, isActive, role). (FACULTY only)"
           }
         }
       ]
@@ -306,12 +681,31 @@
       "item": [
         {
           "name": "Upload Certificate",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var jsonData = pm.response.json();",
+                  "if (jsonData.success && jsonData.data._id) {",
+                  "    pm.collectionVariables.set('certificateId', jsonData.data._id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
           "request": {
             "method": "POST",
             "header": [],
             "body": {
               "mode": "formdata",
               "formdata": [
+                {
+                  "key": "name",
+                  "value": "John Doe",
+                  "type": "text"
+                },
                 {
                   "key": "title",
                   "value": "AWS Solutions Architect",
@@ -323,13 +717,8 @@
                   "type": "text"
                 },
                 {
-                  "key": "fromDate",
+                  "key": "subjectDate",
                   "value": "2024-01-15",
-                  "type": "text"
-                },
-                {
-                  "key": "toDate",
-                  "value": "2027-01-15",
                   "type": "text"
                 },
                 {
@@ -344,7 +733,7 @@
               "host": ["{{baseUrl}}"],
               "path": ["api", "certificates"]
             },
-            "description": "Upload a new certificate (STUDENT only)"
+            "description": "Upload a new certificate with file attachment. Auto-saves certificateId. (STUDENT only)\n\n📎 Select a PDF/JPG/PNG file."
           }
         },
         {
@@ -357,7 +746,7 @@
               "host": ["{{baseUrl}}"],
               "path": ["api", "certificates", "my"]
             },
-            "description": "Get all certificates for logged-in student"
+            "description": "Get all certificates for the logged-in student. Includes statusHistory and verifiedBy. (STUDENT only)"
           }
         },
         {
@@ -370,7 +759,20 @@
               "host": ["{{baseUrl}}"],
               "path": ["api", "certificates", "pending"]
             },
-            "description": "Get all pending certificates (FACULTY/ADMIN only)"
+            "description": "Get pending certificates filtered by faculty's department. (FACULTY only)"
+          }
+        },
+        {
+          "name": "Get All Certificates",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/certificates/all",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "certificates", "all"]
+            },
+            "description": "Get all certificates (all statuses) filtered by faculty's department. Includes statusHistory, verifiedBy. (FACULTY only)"
           }
         },
         {
@@ -385,11 +787,11 @@
               "variable": [
                 {
                   "key": "id",
-                  "value": "certificate_id_here"
+                  "value": "{{certificateId}}"
                 }
               ]
             },
-            "description": "Get a specific certificate by ID"
+            "description": "Get a specific certificate by ID with full statusHistory. (Any authenticated user)"
           }
         },
         {
@@ -413,11 +815,11 @@
               "variable": [
                 {
                   "key": "id",
-                  "value": "certificate_id_here"
+                  "value": "{{certificateId}}"
                 }
               ]
             },
-            "description": "Update certificate (STUDENT only, PENDING status only)"
+            "description": "Update certificate details. Only allowed while status is PENDING. (STUDENT only)"
           }
         },
         {
@@ -432,16 +834,26 @@
               "variable": [
                 {
                   "key": "id",
-                  "value": "certificate_id_here"
+                  "value": "{{certificateId}}"
                 }
               ]
             },
-            "description": "Delete certificate (STUDENT only, PENDING status only)"
+            "description": "Delete certificate. Only allowed while status is PENDING. (STUDENT only)"
           }
         },
         {
           "name": "Verify Certificate (Approve)",
           "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{facultyToken}}",
+                  "type": "string"
+                }
+              ]
+            },
             "method": "POST",
             "header": [
               {
@@ -460,16 +872,26 @@
               "variable": [
                 {
                   "key": "id",
-                  "value": "certificate_id_here"
+                  "value": "{{certificateId}}"
                 }
               ]
             },
-            "description": "Approve a certificate (FACULTY/ADMIN only)"
+            "description": "Approve a pending certificate. Adds to statusHistory. (FACULTY only)"
           }
         },
         {
           "name": "Verify Certificate (Reject)",
           "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{facultyToken}}",
+                  "type": "string"
+                }
+              ]
+            },
             "method": "POST",
             "header": [
               {
@@ -488,120 +910,11 @@
               "variable": [
                 {
                   "key": "id",
-                  "value": "certificate_id_here"
+                  "value": "{{certificateId}}"
                 }
               ]
             },
-            "description": "Reject a certificate (FACULTY/ADMIN only)"
-          }
-        }
-      ]
-    },
-    {
-      "name": "Users (Admin Only)",
-      "item": [
-        {
-          "name": "Create Student",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"name\": \"Jane Student\",\n  \"email\": \"jane@student.edu\",\n  \"studentId\": \"STU002\",\n  \"department\": \"Computer Science\",\n  \"role\": \"STUDENT\"\n}"
-            },
-            "url": {
-              "raw": "{{baseUrl}}/api/users",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "users"]
-            },
-            "description": "Admin creates student (no password - student activates account via /register)"
-          }
-        },
-        {
-          "name": "Create Faculty",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"name\": \"Dr. Smith\",\n  \"email\": \"smith@college.edu\",\n  \"password\": \"faculty123\",\n  \"department\": \"Computer Science\",\n  \"role\": \"FACULTY\"\n}"
-            },
-            "url": {
-              "raw": "{{baseUrl}}/api/users",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "users"]
-            },
-            "description": "Admin creates faculty with password (can login immediately)"
-          }
-        },
-        {
-          "name": "Get All Students",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{baseUrl}}/api/users",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "users"]
-            },
-            "description": "Get all students (ADMIN only)"
-          }
-        },
-        {
-          "name": "Get User by ID",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{baseUrl}}/api/users/:id",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "users", ":id"],
-              "variable": [
-                {
-                  "key": "id",
-                  "value": "user_id_here"
-                }
-              ]
-            },
-            "description": "Get user by ID (ADMIN/FACULTY)"
-          }
-        },
-        {
-          "name": "Update User",
-          "request": {
-            "method": "PATCH",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"name\": \"Updated Name\",\n  \"department\": \"New Department\",\n  \"isActive\": true\n}"
-            },
-            "url": {
-              "raw": "{{baseUrl}}/api/users/:id",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "users", ":id"],
-              "variable": [
-                {
-                  "key": "id",
-                  "value": "user_id_here"
-                }
-              ]
-            },
-            "description": "Update user details (ADMIN only)"
+            "description": "Reject a pending certificate with remarks. Adds to statusHistory. (FACULTY only)"
           }
         }
       ]
@@ -621,14 +934,14 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"name\": \"Data Structures\",\n  \"subjectCode\": \"CS201\",\n  \"department\": \"Computer Science\"\n}"
+              "raw": "{\n  \"name\": \"Data Structures\",\n  \"subjectCode\": \"CS201\",\n  \"departmentId\": \"{{departmentId}}\"\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/api/subjects",
               "host": ["{{baseUrl}}"],
               "path": ["api", "subjects"]
             },
-            "description": "Create a new subject (ADMIN only)"
+            "description": "Create a new subject with department reference. (FACULTY only)"
           }
         },
         {
@@ -641,7 +954,7 @@
               "host": ["{{baseUrl}}"],
               "path": ["api", "subjects"]
             },
-            "description": "Get all subjects (any authenticated user)"
+            "description": "Get all subjects with department name populated. (Any authenticated user)"
           }
         }
       ]
@@ -659,7 +972,7 @@
           "host": ["{{baseUrl}}"],
           "path": [""]
         },
-        "description": "Check if API is running"
+        "description": "Check if API is running. No auth required."
       }
     }
   ]

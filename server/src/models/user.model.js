@@ -24,13 +24,13 @@ const userSchema = new mongoose.Schema({
     enum: Object.values(ROLES),
     default: ROLES.STUDENT,
   },
-  studentId: {
+  rollNo: {
     type: String,
     sparse: true,
   },
-  department: {
-    type: String,
-    trim: true,
+  departmentId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Department',
   },
   isActive: {
     type: Boolean,

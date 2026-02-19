@@ -1,4 +1,5 @@
 const Certificate = require('../models/certificate.model');
+const User = require('../models/user.model');
 const STATUS = require('../constants/certificateStatus');
 const { BASE_URL } = require('../config/env');
 
@@ -24,11 +25,11 @@ const create = async (studentId, data, file) => {
 
   const certificate = new Certificate({
     studentId,
+    name: data.name,
     title: data.title,
     description: data.description,
     subjectId: data.subjectId || null,
-    fromDate: data.fromDate,
-    toDate: data.toDate,
+    subjectDate: data.subjectDate,
     fileUrl: `/uploads/${file.filename}`,
     fileType: file.mimetype,
     status: STATUS.PENDING,
@@ -47,21 +48,43 @@ const getByStudent = async (studentId) => {
   const certificates = await Certificate.find({ studentId })
     .populate('subjectId', 'name subjectCode')
     .populate('verifiedBy', 'name email')
+    .populate('statusHistory.changedBy', 'name email role')
     .sort({ createdAt: -1 });
   return addFullUrlToMany(certificates);
 };
 
-const getPending = async () => {
-  const certificates = await Certificate.find({ status: STATUS.PENDING })
-    .populate('studentId', 'name email studentId department')
+const getPending = async (departmentId) => {
+  const filter = { status: STATUS.PENDING };
+  if (departmentId) {
+    const students = await User.find({ departmentId, role: 'STUDENT' }).select('_id');
+    filter.studentId = { $in: students.map(s => s._id) };
+  }
+  const certificates = await Certificate.find(filter)
+    .populate('studentId', 'name email rollNo departmentId')
     .populate('subjectId', 'name subjectCode')
+    .populate('statusHistory.changedBy', 'name email role')
+    .sort({ createdAt: -1 });
+  return addFullUrlToMany(certificates);
+};
+
+const getAll = async (departmentId) => {
+  const filter = {};
+  if (departmentId) {
+    const students = await User.find({ departmentId, role: 'STUDENT' }).select('_id');
+    filter.studentId = { $in: students.map(s => s._id) };
+  }
+  const certificates = await Certificate.find(filter)
+    .populate('studentId', 'name email rollNo departmentId')
+    .populate('subjectId', 'name subjectCode')
+    .populate('verifiedBy', 'name email')
+    .populate('statusHistory.changedBy', 'name email role')
     .sort({ createdAt: -1 });
   return addFullUrlToMany(certificates);
 };
 
 const getById = async (certificateId) => {
   const certificate = await Certificate.findById(certificateId)
-    .populate('studentId', 'name email studentId department')
+    .populate('studentId', 'name email rollNo departmentId')
     .populate('subjectId', 'name subjectCode')
     .populate('verifiedBy', 'name email')
     .populate('statusHistory.changedBy', 'name email');
@@ -89,12 +112,12 @@ const update = async (certificateId, studentId, data) => {
     throw err;
   }
 
-  const { title, description, subjectId, fromDate, toDate } = data;
+  const { name, title, description, subjectId, subjectDate } = data;
+  if (name) certificate.name = name;
   if (title) certificate.title = title;
   if (description !== undefined) certificate.description = description;
   if (subjectId) certificate.subjectId = subjectId;
-  if (fromDate) certificate.fromDate = fromDate;
-  if (toDate) certificate.toDate = toDate;
+  if (subjectDate) certificate.subjectDate = subjectDate;
 
   await certificate.save();
   return addFullUrl(certificate);
@@ -153,4 +176,4 @@ const verify = async (certificateId, verifierId, status, remarks) => {
   return addFullUrl(certificate);
 };
 
-module.exports = { create, getByStudent, getPending, getById, update, remove, verify };
+module.exports = { create, getByStudent, getPending, getAll, getById, update, remove, verify };

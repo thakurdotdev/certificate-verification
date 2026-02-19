@@ -2,7 +2,7 @@ const User = require('../models/user.model');
 const ROLES = require('../constants/roles');
 
 const createUser = async (data) => {
-  const { name, email, password, role, studentId, department } = data;
+  const { name, email, password, role, rollNo, departmentId } = data;
 
   const existingUser = await User.findOne({ email });
   if (existingUser) {
@@ -15,8 +15,8 @@ const createUser = async (data) => {
     name,
     email,
     role: role || ROLES.STUDENT,
-    studentId,
-    department,
+    rollNo,
+    departmentId,
   };
 
   if (role && role !== ROLES.STUDENT && password) {
@@ -31,8 +31,8 @@ const createUser = async (data) => {
     name: user.name,
     email: user.email,
     role: user.role,
-    studentId: user.studentId,
-    department: user.department,
+    rollNo: user.rollNo,
+    departmentId: user.departmentId,
     isActive: user.isActive,
     isRegistered: !!user.passwordHash,
   };
@@ -46,10 +46,10 @@ const updateUser = async (userId, data) => {
     throw err;
   }
 
-  const { name, department, isActive, role } = data;
+  const { name, departmentId, isActive, role } = data;
 
   if (name) user.name = name;
-  if (department) user.department = department;
+  if (departmentId) user.departmentId = departmentId;
   if (typeof isActive === 'boolean') user.isActive = isActive;
   if (role && Object.values(ROLES).includes(role)) user.role = role;
 
@@ -60,21 +60,34 @@ const updateUser = async (userId, data) => {
     name: user.name,
     email: user.email,
     role: user.role,
-    studentId: user.studentId,
-    department: user.department,
+    rollNo: user.rollNo,
+    departmentId: user.departmentId,
     isActive: user.isActive,
   };
 };
 
-const getAllStudents = async () => {
-  const students = await User.find({ role: ROLES.STUDENT })
+const getAllStudents = async (departmentId) => {
+  const filter = { role: ROLES.STUDENT };
+  if (departmentId) filter.departmentId = departmentId;
+  const students = await User.find(filter)
     .select('-passwordHash')
+    .populate('departmentId', 'name')
     .sort({ createdAt: -1 });
   return students;
 };
 
+const getAllFaculty = async () => {
+  const faculty = await User.find({ role: ROLES.FACULTY })
+    .select('-passwordHash')
+    .populate('departmentId', 'name')
+    .sort({ createdAt: -1 });
+  return faculty;
+};
+
 const getUserById = async (userId) => {
-  const user = await User.findById(userId).select('-passwordHash');
+  const user = await User.findById(userId)
+    .select('-passwordHash')
+    .populate('departmentId', 'name');
   if (!user) {
     const err = new Error('User not found');
     err.status = 404;
@@ -83,4 +96,4 @@ const getUserById = async (userId) => {
   return user;
 };
 
-module.exports = { createUser, updateUser, getAllStudents, getUserById };
+module.exports = { createUser, updateUser, getAllStudents, getAllFaculty, getUserById };

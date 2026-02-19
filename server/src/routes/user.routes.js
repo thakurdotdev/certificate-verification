@@ -7,9 +7,10 @@ const ROLES = require('../constants/roles');
 
 router.use(authenticate);
 
-router.post('/', authorize(ROLES.ADMIN), userController.createUser);
-router.get('/', authorize(ROLES.ADMIN), userController.getAllStudents);
-router.get('/:id', authorize(ROLES.ADMIN, ROLES.FACULTY), userController.getUserById);
-router.patch('/:id', authorize(ROLES.ADMIN), userController.updateUser);
+router.post('/', authorize(ROLES.FACULTY), userController.createUser);
+router.get('/', authorize(ROLES.FACULTY), userController.getAllStudents);
+router.get('/faculty', authorize(ROLES.FACULTY), userController.getAllFaculty);
+router.get('/:id', authorize(ROLES.FACULTY), userController.getUserById);
+router.patch('/:id', authorize(ROLES.FACULTY), userController.updateUser);
 
 module.exports = router;

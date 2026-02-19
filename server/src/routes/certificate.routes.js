@@ -10,10 +10,11 @@ router.use(authenticate);
 
 router.post('/', authorize(ROLES.STUDENT), upload.single('file'), certificateController.create);
 router.get('/my', authorize(ROLES.STUDENT), certificateController.getMyCertificates);
-router.get('/pending', authorize(ROLES.FACULTY, ROLES.ADMIN), certificateController.getPending);
+router.get('/pending', authorize(ROLES.FACULTY), certificateController.getPending);
+router.get('/all', authorize(ROLES.FACULTY), certificateController.getAll);
 router.get('/:id', certificateController.getById);
 router.patch('/:id', authorize(ROLES.STUDENT), certificateController.update);
 router.delete('/:id', authorize(ROLES.STUDENT), certificateController.remove);
-router.post('/:id/verify', authorize(ROLES.FACULTY, ROLES.ADMIN), certificateController.verify);
+router.post('/:id/verify', authorize(ROLES.FACULTY), certificateController.verify);
 
 module.exports = router;

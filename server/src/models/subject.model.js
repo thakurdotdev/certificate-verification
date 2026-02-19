@@ -13,10 +13,10 @@ const subjectSchema = new mongoose.Schema({
     uppercase: true,
     trim: true,
   },
-  department: {
-    type: String,
+  departmentId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Department',
     required: true,
-    trim: true,
   },
 });
 

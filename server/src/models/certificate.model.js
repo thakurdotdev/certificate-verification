@@ -25,6 +25,11 @@ const certificateSchema = new mongoose.Schema({
     ref: 'User',
     required: true,
   },
+  name: {
+    type: String,
+    required: true,
+    trim: true,
+  },
   title: {
     type: String,
     required: true,
@@ -38,10 +43,7 @@ const certificateSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Subject',
   },
-  fromDate: {
-    type: Date,
-  },
-  toDate: {
+  subjectDate: {
     type: Date,
   },
   fileUrl: {

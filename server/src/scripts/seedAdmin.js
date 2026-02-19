@@ -4,33 +4,38 @@ require('dotenv').config();
 
 const MONGO_URL = process.env.MONGO_URL;
 
-const seedAdmin = async () => {
+const seedFaculty = async () => {
   try {
     await mongoose.connect(MONGO_URL);
     console.log('Connected to MongoDB');
 
-    const passwordHash = await bcrypt.hash('admin123', 10);
-    
-    const admin = {
-      name: 'Admin',
-      email: 'admin@marwadi.edu.in',
+    const dept = await mongoose.connection.db.collection('departments').insertOne({
+      name: 'Computer Science',
+    });
+    console.log('✅ Department created: Computer Science');
+
+    const passwordHash = await bcrypt.hash('faculty123', 10);
+
+    const faculty = {
+      name: 'Dr. Faculty',
+      email: 'faculty@marwadi.edu.in',
       passwordHash,
-      role: 'ADMIN',
-      department: 'Administration',
+      role: 'FACULTY',
+      departmentId: dept.insertedId,
       isActive: true,
-      createdAt: new Date()
+      createdAt: new Date(),
     };
 
-    const result = await mongoose.connection.db.collection('users').insertOne(admin);
-    console.log('✅ Admin created successfully!');
-    console.log('Email: admin@marwadi.edu.in');
-    console.log('Password: admin123');
-    
+    await mongoose.connection.db.collection('users').insertOne(faculty);
+    console.log('✅ Faculty created successfully!');
+    console.log('Email: faculty@marwadi.edu.in');
+    console.log('Password: faculty123');
+
     await mongoose.disconnect();
     process.exit(0);
   } catch (error) {
     if (error.code === 11000) {
-      console.log('⚠️ Admin already exists with this email');
+      console.log('⚠️ Faculty or department already exists');
     } else {
       console.error('Error:', error.message);
     }
@@ -38,4 +43,4 @@ const seedAdmin = async () => {
   }
 };
 
-seedAdmin();
+seedFaculty();

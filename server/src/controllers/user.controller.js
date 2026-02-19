@@ -21,8 +21,17 @@ const updateUser = async (req, res) => {
 
 const getAllStudents = async (req, res) => {
   try {
-    const result = await userService.getAllStudents();
+    const result = await userService.getAllStudents(req.query.departmentId);
     return success(res, result, 'Students retrieved successfully');
+  } catch (err) {
+    return error(res, err.message, err.status || 500);
+  }
+};
+
+const getAllFaculty = async (req, res) => {
+  try {
+    const result = await userService.getAllFaculty();
+    return success(res, result, 'Faculty retrieved successfully');
   } catch (err) {
     return error(res, err.message, err.status || 500);
   }
@@ -37,4 +46,4 @@ const getUserById = async (req, res) => {
   }
 };
 
-module.exports = { createUser, updateUser, getAllStudents, getUserById };
+module.exports = { createUser, updateUser, getAllStudents, getAllFaculty, getUserById };

@@ -21,8 +21,17 @@ const getMyCertificates = async (req, res) => {
 
 const getPending = async (req, res) => {
   try {
-    const result = await certificateService.getPending();
+    const result = await certificateService.getPending(req.user.departmentId);
     return success(res, result, 'Pending certificates retrieved successfully');
+  } catch (err) {
+    return error(res, err.message, err.status || 500);
+  }
+};
+
+const getAll = async (req, res) => {
+  try {
+    const result = await certificateService.getAll(req.user.departmentId);
+    return success(res, result, 'All certificates retrieved successfully');
   } catch (err) {
     return error(res, err.message, err.status || 500);
   }
@@ -65,4 +74,4 @@ const verify = async (req, res) => {
   }
 };
 
-module.exports = { create, getMyCertificates, getPending, getById, update, remove, verify };
+module.exports = { create, getMyCertificates, getPending, getAll, getById, update, remove, verify };
