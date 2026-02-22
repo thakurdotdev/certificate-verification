@@ -30,7 +30,7 @@ const getPending = async (req, res) => {
 
 const getAll = async (req, res) => {
   try {
-    const result = await certificateService.getAll(req.user.departmentId);
+    const result = await certificateService.getAll(req.user.departmentId, req.query);
     return success(res, result, 'All certificates retrieved successfully');
   } catch (err) {
     return error(res, err.message, err.status || 500);

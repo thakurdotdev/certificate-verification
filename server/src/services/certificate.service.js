@@ -67,19 +67,67 @@ const getPending = async (departmentId) => {
   return addFullUrlToMany(certificates);
 };
 
-const getAll = async (departmentId) => {
+const getAll = async (departmentId, query = {}) => {
+  const { page = 1, limit = 10, search = '', status } = query;
+  const skip = (page - 1) * limit;
+
   const filter = {};
   if (departmentId) {
-    const students = await User.find({ departmentId, role: 'STUDENT' }).select('_id');
+    const studentFilter = { departmentId, role: 'STUDENT' };
+    if (search) {
+      studentFilter.$or = [
+        { name: { $regex: search, $options: 'i' } },
+        { rollNo: { $regex: search, $options: 'i' } },
+      ];
+    }
+    const students = await User.find(studentFilter).select('_id');
+    filter.studentId = { $in: students.map(s => s._id) };
+  } else if (search) {
+    const students = await User.find({
+      role: 'STUDENT',
+      $or: [
+        { name: { $regex: search, $options: 'i' } },
+        { rollNo: { $regex: search, $options: 'i' } },
+      ],
+    }).select('_id');
     filter.studentId = { $in: students.map(s => s._id) };
   }
-  const certificates = await Certificate.find(filter)
-    .populate('studentId', 'name email rollNo departmentId')
-    .populate('subjectId', 'name subjectCode')
-    .populate('verifiedBy', 'name email')
-    .populate('statusHistory.changedBy', 'name email role')
-    .sort({ createdAt: -1 });
-  return addFullUrlToMany(certificates);
+
+  if (status && status !== 'ALL') {
+    filter.status = status;
+  }
+
+  if (search) {
+    const titleFilter = { title: { $regex: search, $options: 'i' } };
+    if (filter.studentId) {
+      filter.$or = [
+        { studentId: filter.studentId },
+        titleFilter,
+      ];
+      delete filter.studentId;
+    } else {
+      Object.assign(filter, titleFilter);
+    }
+  }
+
+  const [certificates, total] = await Promise.all([
+    Certificate.find(filter)
+      .populate('studentId', 'name email rollNo departmentId')
+      .populate('subjectId', 'name subjectCode')
+      .populate('verifiedBy', 'name email')
+      .populate('statusHistory.changedBy', 'name email role')
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(Number(limit)),
+    Certificate.countDocuments(filter),
+  ]);
+
+  return {
+    certificates: addFullUrlToMany(certificates),
+    total,
+    page: Number(page),
+    totalPages: Math.ceil(total / limit),
+  };
 };
 
 const getById = async (certificateId) => {

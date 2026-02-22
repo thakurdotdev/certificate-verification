@@ -24,8 +24,20 @@ export const getPendingCertificates = async () => {
   return data.data;
 };
 
-export const getAllCertificates = async () => {
-  const { data } = await api.get<ApiResponse<Certificate[]>>("/api/certificates/all");
+export interface PaginatedCertificates {
+  certificates: Certificate[];
+  total: number;
+  page: number;
+  totalPages: number;
+}
+
+export const getAllCertificates = async (params?: {
+  page?: number;
+  limit?: number;
+  search?: string;
+  status?: string;
+}) => {
+  const { data } = await api.get<ApiResponse<PaginatedCertificates>>("/api/certificates/all", { params });
   return data.data;
 };
 
