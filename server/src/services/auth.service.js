@@ -3,18 +3,32 @@ const User = require('../models/user.model');
 const { JWT_SECRET, JWT_EXPIRES_IN } = require('../config/env');
 const ROLES = require('../constants/roles');
 
+const { BASE_URL } = require('../config/env');
+
 const generateToken = (userId) => {
   return jwt.sign({ userId }, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN });
 };
 
-const formatUser = (user) => ({
-  id: user._id,
-  name: user.name,
-  email: user.email,
-  role: user.role,
-  rollNo: user.rollNo,
-  departmentId: user.departmentId,
-});
+const formatUser = (user) => {
+  const obj = {
+    id: user._id,
+    name: user.name,
+    email: user.email,
+    role: user.role,
+    rollNo: user.rollNo,
+    departmentId: user.departmentId,
+    phone: user.phone,
+    alternateEmail: user.alternateEmail,
+    gender: user.gender,
+    profileImage: user.profileImage
+      ? (user.profileImage.startsWith('http') ? user.profileImage : `${BASE_URL}${user.profileImage}`)
+      : null,
+    semester: user.semester,
+    grNo: user.grNo,
+    dob: user.dob,
+  };
+  return obj;
+};
 
 const register = async (data) => {
   const { email, password } = data;

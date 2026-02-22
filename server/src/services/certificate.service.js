@@ -132,8 +132,8 @@ const remove = async (certificateId, studentId) => {
     throw err;
   }
 
-  if (certificate.status !== STATUS.PENDING) {
-    const err = new Error('Cannot delete certificate after verification');
+  if (certificate.status === STATUS.APPROVED) {
+    const err = new Error('Cannot delete an approved certificate');
     err.status = 400;
     throw err;
   }

@@ -522,6 +522,87 @@
       ]
     },
     {
+      "name": "Profile (Self-Service)",
+      "item": [
+        {
+          "name": "Get My Profile",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/users/me",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "users", "me"]
+            },
+            "description": "Get the current user's full profile with department info. (Any authenticated user)"
+          }
+        },
+        {
+          "name": "Update My Profile",
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "name",
+                  "value": "Updated Name",
+                  "type": "text"
+                },
+                {
+                  "key": "phone",
+                  "value": "9876543210",
+                  "type": "text"
+                },
+                {
+                  "key": "alternateEmail",
+                  "value": "personal@gmail.com",
+                  "type": "text"
+                },
+                {
+                  "key": "gender",
+                  "value": "MALE",
+                  "type": "text",
+                  "description": "MALE, FEMALE"
+                },
+                {
+                  "key": "semester",
+                  "value": "5",
+                  "type": "text",
+                  "description": "Student only (1-8)"
+                },
+                {
+                  "key": "grNo",
+                  "value": "GR12345",
+                  "type": "text",
+                  "description": "Student only"
+                },
+                {
+                  "key": "dob",
+                  "value": "2003-05-15",
+                  "type": "text",
+                  "description": "Student only (YYYY-MM-DD)"
+                },
+                {
+                  "key": "profileImage",
+                  "type": "file",
+                  "src": "",
+                  "description": "JPG/PNG profile photo"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/users/me",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "users", "me"]
+            },
+            "description": "Update your own profile. Students can set semester, grNo, dob. Both roles can set phone, alternateEmail, gender, profileImage. (Any authenticated user)"
+          }
+        }
+      ]
+    },
+    {
       "name": "Users (Faculty Only)",
       "item": [
         {

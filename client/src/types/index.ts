@@ -1,5 +1,7 @@
 export type Role = "STUDENT" | "FACULTY";
 
+export type Gender = "MALE" | "FEMALE";
+
 export interface User {
   id: string;
   name: string;
@@ -7,6 +9,13 @@ export interface User {
   role: Role;
   rollNo?: string;
   departmentId?: string;
+  phone?: string;
+  alternateEmail?: string;
+  gender?: Gender;
+  profileImage?: string | null;
+  semester?: number;
+  grNo?: string;
+  dob?: string;
 }
 
 export interface Department {

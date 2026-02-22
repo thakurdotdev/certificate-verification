@@ -71,7 +71,7 @@ export default function AllCertificatesPage() {
                 <TableRow>
                   <TableHead>#</TableHead>
                   <TableHead>Student</TableHead>
-                  <TableHead>Roll No</TableHead>
+                  <TableHead>Enrollment No</TableHead>
                   <TableHead>Title</TableHead>
                   <TableHead>Date</TableHead>
                   <TableHead>Status</TableHead>

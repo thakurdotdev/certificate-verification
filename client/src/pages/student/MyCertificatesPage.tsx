@@ -112,6 +112,7 @@ export default function MyCertificatesPage() {
                 <TableRow>
                   <TableHead>#</TableHead>
                   <TableHead>Title</TableHead>
+                  <TableHead>Description</TableHead>
                   <TableHead>Date</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead>Verified By</TableHead>
@@ -124,6 +125,7 @@ export default function MyCertificatesPage() {
                   <TableRow key={cert._id}>
                     <TableCell>{i + 1}</TableCell>
                     <TableCell className="font-medium">{cert.title}</TableCell>
+                    <TableCell className="max-w-[200px] truncate">{cert.description || "—"}</TableCell>
                     <TableCell>
                       {cert.subjectDate
                         ? new Date(cert.subjectDate).toLocaleDateString()
@@ -163,7 +165,7 @@ export default function MyCertificatesPage() {
                         >
                           <Eye className="h-4 w-4" />
                         </Button>
-                        {cert.status === "PENDING" && (
+                        {(cert.status === "PENDING" || cert.status === "REJECTED") && (
                           <AlertDialog>
                             <AlertDialogTrigger asChild>
                               <Button variant="ghost" size="icon">

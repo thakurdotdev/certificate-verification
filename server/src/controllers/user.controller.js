@@ -3,7 +3,7 @@ const { success, error } = require('../utils/apiResponse');
 
 const createUser = async (req, res) => {
   try {
-    const result = await userService.createUser(req.body);
+    const result = await userService.createUser(req.body, req.file);
     return success(res, result, 'User created successfully', 201);
   } catch (err) {
     return error(res, err.message, err.status || 500);
@@ -12,7 +12,7 @@ const createUser = async (req, res) => {
 
 const updateUser = async (req, res) => {
   try {
-    const result = await userService.updateUser(req.params.id, req.body);
+    const result = await userService.updateUser(req.params.id, req.body, req.file);
     return success(res, result, 'User updated successfully');
   } catch (err) {
     return error(res, err.message, err.status || 500);
@@ -46,4 +46,22 @@ const getUserById = async (req, res) => {
   }
 };
 
-module.exports = { createUser, updateUser, getAllStudents, getAllFaculty, getUserById };
+const getProfile = async (req, res) => {
+  try {
+    const result = await userService.getProfile(req.user._id);
+    return success(res, result, 'Profile retrieved successfully');
+  } catch (err) {
+    return error(res, err.message, err.status || 500);
+  }
+};
+
+const updateProfile = async (req, res) => {
+  try {
+    const result = await userService.updateProfile(req.user._id, req.body, req.file);
+    return success(res, result, 'Profile updated successfully');
+  } catch (err) {
+    return error(res, err.message, err.status || 500);
+  }
+};
+
+module.exports = { createUser, updateUser, getAllStudents, getAllFaculty, getUserById, getProfile, updateProfile };

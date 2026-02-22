@@ -32,6 +32,34 @@ const userSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Department',
   },
+  phone: {
+    type: String,
+    trim: true,
+  },
+  alternateEmail: {
+    type: String,
+    lowercase: true,
+    trim: true,
+  },
+  gender: {
+    type: String,
+    enum: ['MALE', 'FEMALE'],
+  },
+  profileImage: {
+    type: String,
+  },
+  semester: {
+    type: Number,
+    min: 1,
+    max: 8,
+  },
+  grNo: {
+    type: String,
+    trim: true,
+  },
+  dob: {
+    type: Date,
+  },
   isActive: {
     type: Boolean,
     default: true,

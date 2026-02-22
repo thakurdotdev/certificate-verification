@@ -92,7 +92,7 @@ export default function PendingCertificatesPage() {
                 <TableRow>
                   <TableHead>#</TableHead>
                   <TableHead>Student</TableHead>
-                  <TableHead>Roll No</TableHead>
+                  <TableHead>Enrollment No</TableHead>
                   <TableHead>Certificate</TableHead>
                   <TableHead>Title</TableHead>
                   <TableHead>Subject Date</TableHead>
