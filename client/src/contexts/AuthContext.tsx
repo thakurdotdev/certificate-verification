@@ -13,6 +13,7 @@ import type { User, Role } from "@/types";
 interface AuthContextType {
   user: User | null;
   token: string | null;
+  loading: boolean;
   isAuthenticated: boolean;
   role: Role | null;
   login: (email: string, password: string) => Promise<void>;
@@ -23,66 +24,72 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | null>(null);
 
-export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<User | null>(() => {
-    const stored = localStorage.getItem("user");
-    return stored ? JSON.parse(stored) : null;
-  });
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const mapProfile = (profile: any): User => ({
+  id: profile._id || profile.id,
+  name: profile.name,
+  email: profile.email,
+  role: profile.role as Role,
+  rollNo: profile.rollNo,
+  departmentId: profile.departmentId?._id || profile.departmentId,
+  phone: profile.phone,
+  alternateEmail: profile.alternateEmail,
+  gender: profile.gender as User["gender"],
+  profileImage: profile.profileImage,
+  semester: profile.semester,
+  grNo: profile.grNo,
+  dob: profile.dob,
+});
 
+export function AuthProvider({ children }: { children: ReactNode }) {
+  const [user, setUser] = useState<User | null>(null);
   const [token, setToken] = useState<string | null>(() =>
     localStorage.getItem("token")
   );
+  const [loading, setLoading] = useState(!!localStorage.getItem("token"));
+
+  const fetchProfile = useCallback(async () => {
+    try {
+      const profile = await getMyProfile();
+      setUser(mapProfile(profile));
+    } catch {
+      setToken(null);
+      localStorage.removeItem("token");
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
   useEffect(() => {
-    if (token && user) {
-      localStorage.setItem("token", token);
-      localStorage.setItem("user", JSON.stringify(user));
+    if (token) {
+      fetchProfile();
     }
-  }, [token, user]);
+  }, [token, fetchProfile]);
 
   const login = useCallback(async (email: string, password: string) => {
     const result = await loginApi(email, password);
-    setUser(result.user);
-    setToken(result.token);
     localStorage.setItem("token", result.token);
-    localStorage.setItem("user", JSON.stringify(result.user));
+    setToken(result.token);
+    setUser(mapProfile(result.user));
   }, []);
 
   const register = useCallback(async (email: string, password: string) => {
     const result = await registerApi(email, password);
-    setUser(result.user);
-    setToken(result.token);
     localStorage.setItem("token", result.token);
-    localStorage.setItem("user", JSON.stringify(result.user));
+    setToken(result.token);
+    setUser(mapProfile(result.user));
   }, []);
 
   const logout = useCallback(() => {
     setUser(null);
     setToken(null);
     localStorage.removeItem("token");
-    localStorage.removeItem("user");
   }, []);
 
   const refreshProfile = useCallback(async () => {
     try {
       const profile = await getMyProfile();
-      const updated: User = {
-        id: profile._id || (profile as any).id,
-        name: profile.name,
-        email: profile.email,
-        role: profile.role as Role,
-        rollNo: profile.rollNo,
-        departmentId: profile.departmentId?._id,
-        phone: profile.phone,
-        alternateEmail: profile.alternateEmail,
-        gender: profile.gender as User["gender"],
-        profileImage: profile.profileImage,
-        semester: profile.semester,
-        grNo: profile.grNo,
-        dob: profile.dob,
-      };
-      setUser(updated);
-      localStorage.setItem("user", JSON.stringify(updated));
+      setUser(mapProfile(profile));
     } catch {
       /* handled by interceptor */
     }
@@ -93,6 +100,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       value={{
         user,
         token,
+        loading,
         isAuthenticated: !!token,
         role: user?.role ?? null,
         login,

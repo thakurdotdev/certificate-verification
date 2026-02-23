@@ -111,23 +111,21 @@ export default function DashboardPage() {
   const avatarSrc = preview || user?.profileImage || undefined;
   const isStudent = user?.role === "STUDENT";
 
-  const infoRows: { label: string; value?: string | number | null }[] = [
-    { label: "Email", value: user?.email },
-    { label: "Phone", value: user?.phone },
-    { label: "Alternate Email", value: user?.alternateEmail },
-    { label: "Gender", value: user?.gender ? genderLabel[user.gender] || user.gender : null },
-    { label: "Date of Birth", value: user?.dob ? new Date(user.dob).toLocaleDateString() : null },
+  const infoRows: { label: string; value: string }[] = [
+    { label: "Email", value: user?.email || "—" },
+    { label: "Phone", value: user?.phone || "—" },
+    { label: "Alternate Email", value: user?.alternateEmail || "—" },
+    { label: "Gender", value: user?.gender ? genderLabel[user.gender] || user.gender : "—" },
+    { label: "Date of Birth", value: user?.dob ? new Date(user.dob).toLocaleDateString() : "—" },
   ];
 
   if (isStudent) {
     infoRows.push(
-      { label: "Enrollment No", value: user?.rollNo },
-      { label: "GR No", value: user?.grNo },
-      { label: "Semester", value: user?.semester },
+      { label: "Enrollment No", value: user?.rollNo || "—" },
+      { label: "GR No", value: user?.grNo || "—" },
+      { label: "Semester", value: user?.semester ? `Semester ${user.semester}` : "—" },
     );
   }
-
-  const filledRows = infoRows.filter((r) => r.value);
 
   return (
     <div className="space-y-6">
@@ -156,11 +154,11 @@ export default function DashboardPage() {
                 </Button>
               </div>
 
-              {filledRows.length > 1 && (
+              {infoRows.length > 0 && (
                 <>
                   <Separator />
                   <div className="grid gap-3 sm:grid-cols-2">
-                    {filledRows.map((row) => (
+                    {infoRows.map((row) => (
                       <div key={row.label}>
                         <p className="text-xs text-muted-foreground">{row.label}</p>
                         <p className="text-sm font-medium">{row.value}</p>
