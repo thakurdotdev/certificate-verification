@@ -3,12 +3,14 @@ const router = express.Router();
 const Department = require('../models/department.model');
 const authenticate = require('../middlewares/auth.middleware');
 const authorize = require('../middlewares/role.middleware');
+const validate = require('../middlewares/validate');
 const { success, error } = require('../utils/apiResponse');
 const ROLES = require('../constants/roles');
+const { createDepartmentSchema } = require('../validations/department.validation');
 
 router.use(authenticate);
 
-router.post('/', authorize(ROLES.FACULTY), async (req, res) => {
+router.post('/', authorize(ROLES.FACULTY), validate({ body: createDepartmentSchema }), async (req, res) => {
   try {
     const { name } = req.body;
     const department = new Department({ name });
